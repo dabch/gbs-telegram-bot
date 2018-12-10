@@ -36,22 +36,48 @@ def register_group(bot, update):
             subscribers[groupnum].append(id)
         else:
             subscribers[groupnum] = [id]
-        bot.send_message(chat_id=update.message.chat_id, text="Registered successfully for Group {}".format(groupnum))
+        bot.send_message(chat_id=update.message.chat_id, text="Successfully subscribed for Group {}".format(groupnum))
         pickle.dump(subscribers, open('subscribers.p', 'wb+'))
     except:
         if len(msg) > 1:
             msg = msg[1] + " is not a valid group number."
         else:
             msg = "No group number provided."
-        bot.send_message(chat_id=id, text= msg+"\nPlease try again: send `/register [GROUPNUM]` and replace [GROUPNUM] with the number of your GBS Homework group", parse_mode="Markdown")
+        bot.send_message(chat_id=id, text= msg+"\nPlease try again: send `/subscribe [GROUPNUM]` and replace [GROUPNUM] with the number of your GBS Homework group", parse_mode="Markdown")
         return
 
 def unregister_group(bot, update):
-    bot.send_message(chat_id=update.message.chat_id, text="Unregister")
+    msg = update.message.text.split(' ')
+    id = update.message.chat_id
+    if len(msg) > 1 and msg[1] == 'all':
+        for group in subscribers:
+            if id in subscribers[group]:
+                subscribers[group].remove(id)
+                # if subscribers[group] == []:
+                #     del subscribers[group]
+        bot.send_message(id, 'Successfully unsubscribed from all groups!')
+    else:
+        try:
+            groupnum = int(msg[1])
+            if not id in subscribers[groupnum]:
+                bot.send_message(id, 'Not subscribed to group {}'.format(group))
+                return
+            else:
+                subscribers[groupnum].remove(id)
+                bot.send_message(chat_id=update.message.chat_id, text="Successfully unsubscribed from Group {}".format(groupnum))
+        except:
+            if len(msg) > 1:
+                msg = msg[1] + " is not a valid group number."
+            else:
+                msg = "No group number provided."
+            bot.send_message(chat_id=id, text= msg+"\nPlease try again: send `/unsubscribe [GROUPNUM]` and replace [GROUPNUM] with the number of your GBS Homework group\nAlternatively, send `/unsubscribe all` to unsubscribe from all groups.", parse_mode="Markdown")
+            return
+
+    pickle.dump(subscribers, open('subscribers.p', 'wb+'))
 
 start_handler = CommandHandler('start', start)
-register_handler = CommandHandler('register', register_group)
-unregister_handler = CommandHandler('unregister', unregister_group)
+register_handler = CommandHandler('subscribe', register_group)
+unregister_handler = CommandHandler('unsubscribe', unregister_group)
 
 dispatcher.add_handler(start_handler)
 dispatcher.add_handler(register_handler)

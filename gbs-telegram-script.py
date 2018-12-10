@@ -55,11 +55,11 @@ def craft_testoutput(group):
     print(points_old)
     for t in points[group]:
         if not group in points_old  or not t not in points_old[group] or points_old[group][t] != points[group][t]:
-            testouts.append('Test output for new task #' + str(t) + ':\n' + test_out[group][t].replace(" - ", "\n"))
+            testouts.append('Test output for new task #' + str(t) + ':\n```' + test_out[group][t].replace(" - ", "\n") + '```')
     return testouts
 
 def craft_summary(group):
-    msg = '❗A new submission was corrected for group {}❗\n'.format(group)
+    msg = '❗New points for group {}❗\n'.format(group)
     total = 0
     for t, p in points[group].items():
         total += p
@@ -104,6 +104,9 @@ print(points)
 for group in points:
     if group in subbed_groups and (not group in points_old or points[group] != points_old[group]):
         print("Difference detected in group {}. Sending message".format(group))
+        testout = craft_testoutput(group)
+        for test in testout:
+            send_msg(test, group, 'Markdown')
         summary = craft_summary(group)
         send_msg(summary, group)
         testout = craft_testoutput(group)
