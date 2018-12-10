@@ -18,8 +18,6 @@ BOT_TOKEN = config['DEFAULT']['TOKEN']
 
 bot = telegram.Bot(BOT_TOKEN)
 
-print("working with group {} and chatid {}".format(GROUP_NUM, CHAT_ID))
-
 url = 'http://gbs.cm.in.tum.de/gbs_result.html'
 page = urlopen(url)
 
@@ -42,21 +40,28 @@ if os.path.isfile('points.p'):
 
 if os.path.isfile('subscribers.p'):
     print('Loading subscribers from pickle')
-    subscribers = pickle.load(open('subscribers', 'rb'))
+    subscribers = pickle.load(open('subscribers.p', 'rb'))
 
-def send_msg(msg, chatid):
-    bot.send_message(chatid, str(msg), parse_mode='Markdown')
+print(subscribers)
 
-def craft_testoutput(points, group):
-    msg = ''
-    for t, p in points.items():
-        if t not in points_old.keys():
-            msg += 'Test output for new task #' + str(t) + ':\n' + test_out[t].replace(" - ", "\n"))
+def send_msg(msg, group, mode='Markdown'):
+    for sub in subscribers[group]:
+        bot.send_message(sub, str(msg), parse_mode=mode)
+    
 
-def craft_summary():
-    msg = '❗A new submission was corrected❗\n'
+def craft_testoutput(group):
+    testouts = []
+    print(points)
+    print(points_old)
+    for t in points[group]:
+        if not group in points_old  or not t not in points_old[group] or points_old[group][t] != points[group][t]:
+            testouts.append('Test output for new task #' + str(t) + ':\n' + test_out[group][t].replace(" - ", "\n"))
+    return testouts
+
+def craft_summary(group):
+    msg = '❗A new submission was corrected for group {}❗\n'.format(group)
     total = 0
-    for t, p in points.items():
+    for t, p in points[group].items():
         total += p
         msg += '#' + str(t) + ' = ' + str(p)
         if p >= 10:
@@ -67,36 +72,43 @@ def craft_summary():
             msg += ' ❌'
         msg += '\n'
     msg += 'Total: *' + str(total) + '*\n'
-    msg += 'Average: *' + str(total / len(points)) + '*\n'
-    msg += 'Percentage: *' + str(total / (len(points) * 10) * 100) + '%*\n'
+    msg += 'Average: *' + str(total / len(points[group])) + '*\n'
+    msg += 'Percentage: *' + str(total / (len(points[group]) * 10) * 100) + '%*\n'
     return msg
 
-rows = soup.find_all('tr')[1:]
+rows = soup.find_all('tr')[1:] # cut off the heading row
 
 subbed_groups = sorted(subscribers)
-lastgroup = 1
 for row in rows:
     cols = row.find_all('td')
-    group = int(cols[4].text)
-    # print(cols[0].text, int(cols[0].text) == GROUP_NUM, GROUP_NUM)
-    if(len(cols) >= 4 and group in subscribers)):
-        if  # TODO save if the group number has changed
-        group = int(cols[4].text)
+    # if len(cols) >= 4:
+    #     print(cols[0].text)
+    if len(cols) >= 4 and int(cols[0].text) in subbed_groups:
+        group = int(cols[0].text)
+        print('Found subbed group {}'.format(group))
         task = int(cols[1].text)
         point = float(cols[2].text)
+        if group not in points:
+            points[group] = {}
+        if group not in test_out:
+            test_out[group] = {}
         points[group][task] = point
         testout = cols[3].text
-        occurences = re.findall("Points received: \d\/\d", testout)
-        for x in occurences:
-            testout.replace(x, x + "\n")
-        test_out[task] = testout
+        # occurences = re.findall("Points received: \d\/\d", testout)
+        # for x in occurences:
+        #     testout.replace(x, x + "\n")
+        test_out[group][task] = testout
 
 print(points)
 
-if points[group] != points_old[group]:
-    print("Difference detected. Sending message")
-    msg = craft_summary()
-    send_msg(msg)
+for group in points:
+    if group in subbed_groups and (not group in points_old or points[group] != points_old[group]):
+        print("Difference detected in group {}. Sending message".format(group))
+        summary = craft_summary(group)
+        send_msg(summary, group)
+        testout = craft_testoutput(group)
+        for test in testout:
+            send_msg(test, group, '')
 
-sys.setrecursionlimit(10000)
+#sys.setrecursionlimit(10000)
 pickle.dump(points, open('points.p', 'wb+'))
