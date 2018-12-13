@@ -93,8 +93,8 @@ def craft_summary(group):
             msg += ' ❌'
         msg += '\n'
     msg += 'Total: *' + str(total) + '*\n'
-    msg += 'Average: *' + str(total / len(points[group])) + '*\n'
-    msg += 'Percentage: *' + str(total / (len(points[group]) * 10) * 100) + '%*\n'
+    msg += 'Average: *%.2f*\n' % (total / len(points[group]))
+    msg += 'Percentage: *%.2f%%*\n' % (total / (len(points[group]) * 10) * 100)
     return msg
 
 rows = soup.find_all('tr')[1:] # cut off the heading row
