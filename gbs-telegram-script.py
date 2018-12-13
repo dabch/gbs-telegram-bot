@@ -59,11 +59,13 @@ def send_msg(msg, group, mode='Markdown'):
     for sub in subscribers[group]:
         try:
             bot.send_message(sub, str(msg), parse_mode=mode)
-            print("Sending message...")
             time.sleep(0.05) # sleep to avoid hitting the flood limit
-        except:
-            print("Failed to send message: Flood limit reached?")
+        except TelegramError as e:
+            print("Failed to send message: " + str(e))
+            print(msg)
             time.sleep(2)
+
+        
 
     
 
@@ -76,7 +78,11 @@ def craft_testoutput(group):
         # print(points_old[group])
         # print(points_old[group][t])
         if (not group in points_old) or (not t in points_old[group]) or (points_old[group][t] != points[group][t]):
-            testouts.append('Test output for new task #' + str(t) + ':\n```' + test_out[group][t].replace(" - ", "\n") + '```')
+            out = 'Test output for new task #' + str(t) + ':\n```' + test_out[group][t].replace(" - ", "\n") + '```'
+            if len(out) > 4096:
+                testouts.append('Test output for new task #%d is too long. Please refer to [http://gbs.cm.in.tum.de/gbs_result.html](http://gbs.cm.in.tum.de/gbs_result.html).' % t)
+            else:
+                testouts.append(out)
     return testouts
 
 def craft_summary(group):
