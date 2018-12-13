@@ -8,6 +8,11 @@ import os
 import sys
 import re
 import configparser
+from telegram.ext import messagequeue as mq
+from telegram.ext import MessageHandler, Filters
+from telegram.utils.request import Request
+from telegram import TelegramError
+import time
 
 print('loading config from config.ini')
 config = configparser.ConfigParser()
@@ -44,9 +49,22 @@ if os.path.isfile('subscribers.p'):
 
 print(subscribers)
 
+
 def send_msg(msg, group, mode='Markdown'):
+    """
+    Telegram flood limits:
+    - no more than 30 messages per second total (i.e. wait at least 1/30 of a second between sending messages)
+    - no more than 20 messages per minute per group (shouldn't bother us)
+    """
     for sub in subscribers[group]:
-        bot.send_message(sub, str(msg), parse_mode=mode)
+        try:
+            bot.send_message(sub, str(msg), parse_mode=mode)
+            print("Sending message...")
+            time.sleep(0.05) # sleep to avoid hitting the flood limit
+        except:
+            print("Failed to send message: Flood limit reached?")
+            time.sleep(2)
+
     
 
 def craft_testoutput(group):
@@ -54,7 +72,10 @@ def craft_testoutput(group):
     print(points)
     print(points_old)
     for t in points[group]:
-        if not group in points_old  or not t not in points_old[group] or points_old[group][t] != points[group][t]:
+        # print(points_old)
+        # print(points_old[group])
+        # print(points_old[group][t])
+        if (not group in points_old) or (not t in points_old[group]) or (points_old[group][t] != points[group][t]):
             testouts.append('Test output for new task #' + str(t) + ':\n```' + test_out[group][t].replace(" - ", "\n") + '```')
     return testouts
 
@@ -109,9 +130,5 @@ for group in points:
             send_msg(test, group, 'Markdown')
         summary = craft_summary(group)
         send_msg(summary, group)
-        testout = craft_testoutput(group)
-        for test in testout:
-            send_msg(test, group, '')
 
-#sys.setrecursionlimit(10000)
 pickle.dump(points, open('points.p', 'wb+'))
