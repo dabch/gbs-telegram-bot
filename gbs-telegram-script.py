@@ -63,11 +63,7 @@ def send_msg(msg, group, mode='Markdown'):
         except TelegramError as e:
             print("Failed to send message: " + str(e))
             print(msg)
-            time.sleep(2)
-
-        
-
-    
+            time.sleep(2)   
 
 def craft_testoutput(group):
     testouts = []

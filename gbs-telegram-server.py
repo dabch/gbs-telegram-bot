@@ -13,6 +13,8 @@ config = configparser.ConfigParser()
 config.read('config.ini')
 BOT_TOKEN = config['DEFAULT']['TOKEN']
 
+HELLO_TEXT = "Hello 🙌 This is the GBS Ergebnis-Bot. I will send you an update whenever a group you're subscribed to gets a new grade on the website ✌️\nYou can subscribe to a new group by sending /subscribe [GROUPNUM], replacing [GROUPNUM] with your homework group number (e.g. 222)."
+
 print('loading info from subscribers.p')
 subscribers = {}
 if os.path.isfile('subscribers.p'):
@@ -25,7 +27,7 @@ updater = Updater(token=BOT_TOKEN)
 dispatcher = updater.dispatcher
 
 def start(bot, update):
-    bot.send_message(chat_id=update.message.chat_id, text="Hello")
+    bot.send_message(chat_id=update.message.chat_id, text=HELLO_TEXT, parse_mode="Markdown")
 
 def register_group(bot, update):
     msg = update.message.text.split(' ')
