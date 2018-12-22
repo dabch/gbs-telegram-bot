@@ -1,0 +1,19 @@
+[Install]
+WantedBy=multi-user.target
+
+[Unit]
+Description=Telegram GBS Ergebnisbot Server
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=pi
+Group=pi
+ExecStart=/home/pi/gbs-telegram-bot/gbs-telegram-server.py
+ExecStartPre=/bin/sleep 10
+WorkingDirectory=/home/pi/gbs-telegram-bot/
+Type=simple
+
+[Timer]
+OnStartupSec=25
+
